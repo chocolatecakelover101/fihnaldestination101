@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Spinny — Random Wheel</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    :root {
+      --bg: #090a0c;
+      --bg-2: #0d0f12;
+      --panel: rgba(18, 20, 24, 0.82);
+      --panel-2: rgba(24, 27, 32, 0.8);
+      --border: rgba(255,255,255,.08);
+      --border-hover: rgba(255,255,255,.16);
+      --text: #f5f5f5;
+      --muted: #8c919a;
+      --muted-2: #5e636c;
+      --accent: #ffffff;
+      --shadow: 0 25px 80px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    /* Ambient background */
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      z-index: -2;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(255,255,255,.055), transparent 25%),
+        radial-gradient(circle at 10% 90%, rgba(100,110,255,.045), transparent 25%),
+        radial-gradient(circle at 90% 70%, rgba(255,255,255,.03), transparent 25%);
+      pointer-events: none;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: .18;
+      pointer-events: none;
+
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+
+      background-size: 40px 40px;
+
+      mask-image: linear-gradient(to bottom, black, transparent 75%);
+    }
+
+    .app {
+      width: min(1400px, calc(100% - 40px));
+      margin: auto;
+      min-height: 100vh;
+      padding: 28px 0 40px;
+    }
+
+    /* Header */
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+
+      border: 1px solid var(--border);
+      border-radius: 12px;
+
+      background: linear-gradient(
+        145deg,
+        rgba(255,255,255,.11),
+        rgba(255,255,255,.025)
+      );
+
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.08),
+        0 8px 30px rgba(0,0,0,.3);
+
+      font-size: 18px;
+    }
+
+    .brand-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -.03em;
+    }
+
+    .brand-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    .top-button {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+
+      padding: 9px 13px;
+      border-radius: 11px;
+
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .top-button:hover {
+      color: white;
+      border-color: var(--border-hover);
+      background: rgba(255,255,255,.07);
+    }
+
+    /* Layout */
+
+    .layout {
+      display: grid;
+      grid-template-columns: 350px minmax(0, 1fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.045),
+          rgba(255,255,255,.015)
+        ),
+        var(--panel);
+
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    /* Sidebar */
+
+    .sidebar {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 690px;
+    }
+
+    .section-title {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+
+      border: 1px solid var(--border);
+      border-radius: 12px;
+
+      background: rgba(0,0,0,.24);
+      color: white;
+
+      padding: 11px 13px;
+      outline: none;
+
+      font-family: inherit;
+      font-size: 13px;
+
+      transition: .2s ease;
+    }
+
+    input::placeholder {
+      color: var(--muted-2);
+    }
+
+    input:focus {
+      border-color: rgba(255,255,255,.25);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.035);
+    }
+
+    .add-btn {
+      width: 43px;
+      flex-shrink: 0;
+
+      border: 1px solid var(--border);
+      border-radius: 12px;
+
+      background: rgba(255,255,255,.08);
+      color: white;
+
+      cursor: pointer;
+      font-size: 18px;
+
+      transition: .2s ease;
+    }
+
+    .add-btn:hover {
+      background: rgba(255,255,255,.14);
+      transform: translateY(-1px);
+    }
+
+    .items {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+
+      max-height: 470px;
+      overflow-y: auto;
+      padding-right: 3px;
+    }
+
+    .items::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .items::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.12);
+      border-radius: 99px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+
+      padding: 10px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+
+      background: rgba(255,255,255,.025);
+
+      transition: .18s ease;
+    }
+
+    .item:hover {
+      border-color: var(--border);
+      background: rgba(255,255,255,.045);
+    }
+
+    .item-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      background: white;
+      box-shadow: 0 0 10px rgba(255,255,255,.4);
+    }
+
+    .item span {
+      flex: 1;
+      min-width: 0;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+
+      font-size: 13px;
+    }
+
+    .delete {
+      border: 0;
+      background: transparent;
+      color: var(--muted-2);
+
+      cursor: pointer;
+      font-size: 16px;
+
+      padding: 2px 4px;
+
+      transition: .15s ease;
+    }
+
+    .delete:hover {
+      color: #ff7f87;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .hint {
+      color: var(--muted-2);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    kbd {
+      padding: 2px 5px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+    }
+
+    /* Wheel */
+
+    .wheel-panel {
+      min-height: 690px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wheel-panel::before {
+      content: "";
+      position: absolute;
+      width: 500px;
+      height: 500px;
+
+      border-radius: 50%;
+
+      background: rgba(255,255,255,.035);
+      filter: blur(80px);
+
+      pointer-events: none;
+    }
+
+    .wheel-title {
+      position: absolute;
+      top: 27px;
+      left: 30px;
+
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .wheel-wrap {
+      position: relative;
+      width: min(530px, 72vw);
+      aspect-ratio: 1;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+
+      filter:
+        drop-shadow(0 30px 55px rgba(0,0,0,.5));
+    }
+
+    /* Pointer */
+
+    .pointer {
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+
+      width: 0;
+      height: 0;
+
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 25px solid white;
+
+      z-index: 5;
+
+      filter:
+        drop-shadow(0 3px 5px rgba(0,0,0,.55));
+    }
+
+    .pointer::after {
+      content: "";
+      position: absolute;
+
+      width: 7px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #111;
+
+      top: -20px;
+      left: -3.5px;
+    }
+
+    /* Center button */
+
+    .spin-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+
+      transform: translate(-50%, -50%);
+
+      width: 86px;
+      height: 86px;
+
+      border-radius: 50%;
+
+      border: 7px solid rgba(255,255,255,.05);
+
+      background:
+        radial-gradient(
+          circle at 35% 30%,
+          #333842,
+          #17191e 65%
+        );
+
+      color: white;
+
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.1),
+        0 10px 35px rgba(0,0,0,.6),
+        inset 0 1px rgba(255,255,255,.12);
+
+      transition: .2s ease;
+      z-index: 4;
+    }
+
+    .spin-button:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.2),
+        0 15px 40px rgba(0,0,0,.65);
+    }
+
+    .spin-button:active {
+      transform: translate(-50%, -50%) scale(.96);
+    }
+
+    .spin-button.spinning {
+      cursor: wait;
+      opacity: .8;
+    }
+
+    /* Result */
+
+    .result {
+      margin-top: 24px;
+
+      min-height: 62px;
+      min-width: 260px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      padding: 9px 22px;
+
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      background: rgba(255,255,255,.035);
+
+      text-align: center;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .result-value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* Cute decorations */
+
+    .cute {
+      position: absolute;
+      color: rgba(255,255,255,.17);
+      font-size: 16px;
+      pointer-events: none;
+      user-select: none;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .cute.one {
+      top: 19%;
+      right: 15%;
+    }
+
+    .cute.two {
+      bottom: 17%;
+      left: 12%;
+      animation-delay: -1.5s;
+      font-size: 12px;
+    }
+
+    .cute.three {
+      bottom: 23%;
+      right: 10%;
+      animation-delay: -2.5s;
+      font-size: 10px;
+    }
+
+    @keyframes float {
+      0%,100% {
+        transform: translateY(0) rotate(0);
+      }
+      50% {
+        transform: translateY(-8px) rotate(5deg);
+      }
+    }
+
+    /* History */
+
+    .history {
+      margin-top: 18px;
+      width: min(530px, 72vw);
+
+      display: flex;
+      gap: 7px;
+
+      overflow-x: auto;
+      padding-bottom: 3px;
+    }
+
+    .history::-webkit-scrollbar {
+      height: 3px;
+    }
+
+    .history::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.1);
+    }
+
+    .history-item {
+      flex-shrink: 0;
+
+      padding: 6px 10px;
+
+      border-radius: 9px;
+      border: 1px solid var(--border);
+
+      color: var(--muted);
+      background: rgba(255,255,255,.025);
+
+      font-size: 11px;
+    }
+
+    /* Empty */
+
+    .empty {
+      padding: 30px 10px;
+      text-align: center;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    /* Responsive */
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+      }
+
+      .wheel-panel {
+        min-height: 650px;
+      }
+
+      .items {
+        max-height: 230px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        width: min(100% - 22px, 1400px);
+        padding-top: 16px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      .brand-sub {
+        display: none;
+      }
+
+      .wheel-panel {
+        min-height: 560px;
+      }
+
+      .wheel-wrap {
+        width: 88vw;
+      }
+
+      .history {
+        width: 88vw;
+      }
+
+      .wheel-title {
+        top: 18px;
+        left: 20px;
+      }
+
+      .result {
+        min-width: 210px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="logo">◌</div>
+
+      <div>
+        <span class="brand-name">spinny</span>
+        <span class="brand-sub">random wheel</span>
+      </div>
+    </div>
+
+    <button class="top-button" id="clearBtn">
+      Clear
+    </button>
+  </header>
+
+
+  <main class="layout">
+
+    <!-- Sidebar -->
+
+    <section class="panel sidebar">
+
+      <div class="section-title">
+        Wheel entries
+      </div>
+
+      <div class="section-sub">
+        Add anything you want to randomize.
+      </div>
+
+      <div class="input-row">
+        <input
+          id="itemInput"
+          type="text"
+          placeholder="e.g. Metallica"
+          autocomplete="off"
+        />
+
+        <button class="add-btn" id="addBtn">
+          +
+        </button>
+      </div>
+
+      <div class="items" id="items"></div>
+
+      <div class="sidebar-bottom">
+        <div class="hint">
+          Press <kbd>Enter</kbd> to add an item<br>
+          Press <kbd>Space</kbd> to spin
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- Wheel -->
+
+    <section class="panel wheel-panel">
+
+      <div class="wheel-title">
+        randomizer
+      </div>
+
+      <div class="cute one">✦</div>
+      <div class="cute two">♡</div>
+      <div class="cute three">✧</div>
+
+      <div class="wheel-wrap">
+
+        <div class="pointer"></div>
+
+        <canvas id="wheel"></canvas>
+
+        <button class="spin-button" id="spinBtn">
+          SPIN
+        </button>
+
+      </div>
+
+      <div class="result">
+        <div class="result-label">
+          Result
+        </div>
+
+        <div class="result-value" id="result">
+          Ready?
+        </div>
+      </div>
+
+      <div class="history" id="history"></div>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+<script>
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const input = document.getElementById("itemInput");
+const addBtn = document.getElementById("addBtn");
+const itemsEl = document.getElementById("items");
+const spinBtn = document.getElementById("spinBtn");
+const resultEl = document.getElementById("result");
+const historyEl = document.getElementById("history");
+const clearBtn = document.getElementById("clearBtn");
+
+let items = [
+  "Metallica",
+  "System of a Down",
+  "Slipknot",
+  "Deftones",
+  "Linkin Park",
+  "Bring Me The Horizon"
+];
+
+let rotation = 0;
+let spinning = false;
+
+const colors = [
+  "#20242b",
+  "#2a2f37",
+  "#353a43",
+  "#24282f",
+  "#3d424b",
+  "#292d34",
+  "#454a53",
+  "#30343c"
+];
+
+
+/* -------------------------
+   Canvas
+------------------------- */
+
+function resizeCanvas() {
+
+  const rect = canvas.getBoundingClientRect();
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  drawWheel();
+}
+
+window.addEventListener("resize", resizeCanvas);
+
+
+/* -------------------------
+   Draw Wheel
+------------------------- */
+
+function drawWheel() {
+
+  const size = canvas.clientWidth;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size / 2 - 14;
+
+  ctx.clearRect(0, 0, size, size);
+
+  if (!items.length) {
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+
+    ctx.fillStyle = "#17191e";
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.08)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#777c84";
+    ctx.font = "500 14px DM Sans";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillText(
+      "Add some entries",
+      cx,
+      cy
+    );
+
+    return;
+  }
+
+
+  const slice = Math.PI * 2 / items.length;
+
+  ctx.save();
+
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+
+  for (let i = 0; i < items.length; i++) {
+
+    const start = i * slice;
+    const end = start + slice;
+
+    /* slice */
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(
+      0,
+      0,
+      radius,
+      start,
+      end
+    );
+
+    ctx.closePath();
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.08)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+
+    /* text */
+
+    ctx.save();
+
+    ctx.rotate(start + slice / 2);
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+
+    const maxLength = 17;
+
+    let text = items[i];
+
+    if (text.length > maxLength) {
+      text = text.slice(0, maxLength) + "…";
+    }
+
+    ctx.font =
+      `${Math.max(11, Math.min(15, 260 / items.length))}px DM Sans`;
+
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+
+    ctx.fillText(
+      text,
+      radius - 24,
+      0
+    );
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+
+  /* outer ring */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    cx,
+    cy,
+    radius,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.strokeStyle = "rgba(255,255,255,.13)";
+  ctx.lineWidth = 2;
+
+  ctx.stroke();
+
+
+  /* inner ring */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    cx,
+    cy,
+    radius - 10,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.strokeStyle = "rgba(255,255,255,.025)";
+  ctx.lineWidth = 1;
+
+  ctx.stroke();
+
+}
+
+
+/* -------------------------
+   Render list
+------------------------- */
+
+function renderItems() {
+
+  itemsEl.innerHTML = "";
+
+  if (!items.length) {
+
+    itemsEl.innerHTML = `
+      <div class="empty">
+        Nothing here yet.<br>
+        Humanity has abandoned the wheel.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  items.forEach((item, index) => {
+
+    const row = document.createElement("div");
+
+    row.className = "item";
+
+    row.innerHTML = `
+      <div class="item-dot"></div>
+
+      <span>${escapeHTML(item)}</span>
+
+      <button
+        class="delete"
+        data-index="${index}"
+        title="Remove"
+      >
+        ×
+      </button>
+    `;
+
+    itemsEl.appendChild(row);
+  });
+
+
+  document.querySelectorAll(".delete").forEach(btn => {
+
+    btn.addEventListener("click", () => {
+
+      const index = Number(btn.dataset.index);
+
+      items.splice(index, 1);
+
+      renderItems();
+      drawWheel();
+
+    });
+
+  });
+
+}
+
+
+/* -------------------------
+   Add item
+------------------------- */
+
+function addItem() {
+
+  const value = input.value.trim();
+
+  if (!value) return;
+
+  items.push(value);
+
+  input.value = "";
+
+  renderItems();
+  drawWheel();
+
+  input.focus();
+}
+
+addBtn.addEventListener("click", addItem);
+
+input.addEventListener("keydown", e => {
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addItem();
+  }
+
+});
+
+
+/* -------------------------
+   Clear
+------------------------- */
+
+clearBtn.addEventListener("click", () => {
+
+  items = [];
+
+  resultEl.textContent = "Ready?";
+
+  renderItems();
+  drawWheel();
+
+});
+
+
+/* -------------------------
+   Spin
+------------------------- */
+
+function spin() {
+
+  if (spinning || items.length < 2) return;
+
+  spinning = true;
+
+  spinBtn.classList.add("spinning");
+
+  resultEl.textContent = "Spinning…";
+
+
+  const count = items.length;
+
+  const slice = Math.PI * 2 / count;
+
+  const winner =
+    Math.floor(Math.random() * count);
+
+
+  /*
+    Pointer is at -90°.
+    We calculate the center of the winning slice
+    and rotate that point to the pointer.
+  */
+
+  const winnerAngle =
+    winner * slice + slice / 2;
+
+  const pointerAngle =
+    -Math.PI / 2;
+
+
+  let targetRotation =
+    pointerAngle - winnerAngle;
+
+
+  const currentNormalized =
+    rotation % (Math.PI * 2);
+
+
+  targetRotation =
+    rotation +
+    (targetRotation - currentNormalized) +
+    Math.PI * 2 * (6 + Math.floor(Math.random() * 3));
+
+
+  const startRotation = rotation;
+
+  const duration = 4300 + Math.random() * 800;
+
+  const startTime = performance.now();
+
+
+  function animate(now) {
+
+    const elapsed = now - startTime;
+
+    let progress =
+      Math.min(elapsed / duration, 1);
+
+
+    /*
+      Quintic ease-out.
+      Starts violently enthusiastic,
+      ends with dignity.
+    */
+
+    const eased =
+      1 - Math.pow(1 - progress, 5);
+
+
+    rotation =
+      startRotation +
+      (targetRotation - startRotation) * eased;
+
+
+    drawWheel();
+
+
+    if (progress < 1) {
+
+      requestAnimationFrame(animate);
+
+    } else {
+
+      rotation = targetRotation;
+
+      drawWheel();
+
+      finishSpin(winner);
+
+    }
+
+  }
+
+
+  requestAnimationFrame(animate);
+
+}
+
+
+/* -------------------------
+   Finish
+------------------------- */
+
+function finishSpin(index) {
+
+  spinning = false;
+
+  spinBtn.classList.remove("spinning");
+
+  const winner = items[index];
+
+  resultEl.textContent = winner;
+
+  addHistory(winner);
+
+  confetti();
+
+}
+
+
+/* -------------------------
+   History
+------------------------- */
+
+function addHistory(value) {
+
+  const el = document.createElement("div");
+
+  el.className = "history-item";
+
+  el.textContent = value;
+
+  historyEl.prepend(el);
+
+
+  while (historyEl.children.length > 8) {
+    historyEl.lastChild.remove();
+  }
+
+}
+
+
+/* -------------------------
+   Confetti
+------------------------- */
+
+function confetti() {
+
+  const pieces = [];
+
+  for (let i = 0; i < 55; i++) {
+
+    pieces.push({
+
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+
+      vx: (Math.random() - .5) * 9,
+      vy: Math.random() * -9 - 2,
+
+      size: Math.random() * 4 + 2,
+
+      life: 1,
+
+      rotation: Math.random() * Math.PI
+
+    });
+
+  }
+
+
+  function animate() {
+
+    pieces.forEach(p => {
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      p.vy += .18;
+
+      p.life -= .018;
+
+      p.rotation += .15;
+
+    });
+
+
+    const alive =
+      pieces.some(p => p.life > 0);
+
+
+    if (alive) {
+
+      requestAnimationFrame(animate);
+
+    }
+
+  }
+
+
+  requestAnimationFrame(animate);
+
+}
+
+
+/* -------------------------
+   Keyboard shortcuts
+------------------------- */
+
+document.addEventListener("keydown", e => {
+
+  if (
+    e.code === "Space" &&
+    document.activeElement !== input
+  ) {
+
+    e.preventDefault();
+
+    spin();
+
+  }
+
+});
+
+
+/* -------------------------
+   Escape HTML
+------------------------- */
+
+function escapeHTML(str) {
+
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+/* -------------------------
+   Init
+------------------------- */
+
+renderItems();
+
+requestAnimationFrame(() => {
+  resizeCanvas();
+});
+
+spinBtn.addEventListener("click", spin);
+
+</script>
+
+</body>
+</html>
